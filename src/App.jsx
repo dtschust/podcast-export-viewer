@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { xml2js } from "xml-js";
 import { Card, CardContent } from "./components/ui/card";
+import { parseOpmlToPodcasts } from "./utils/parseOpml.mjs";
 
 export default function PodcastViewerApp() {
   const [data, setData] = useState([]);
@@ -12,35 +12,7 @@ export default function PodcastViewerApp() {
     if (!file) return;
 
     const text = await file.text();
-    const parsed = xml2js(text, { compact: true });
-    const outlines = parsed.opml.body.outline;
-    const podcasts = [];
-
-    const extractPodcasts = (items) => {
-      if (!Array.isArray(items)) return;
-      for (const item of items) {
-        if (item._attributes?.xmlUrl) {
-          console.log(JSON.stringify(item.outline));
-          const episodes = Array.isArray(item.outline)
-            ? item.outline.map((ep) => ({
-                title: ep._attributes?.title || "",
-                releaseDate: ep._attributes?.pubDate || "",
-                playedStatus: ep._attributes?.progress ? "in progress" : ep._attributes?.played ==="1" ? "played" : "unplayed",
-                progress: ep._attributes?.progress,
-                rawInfo: ep._attributes,
-              }))
-            : [];
-
-          podcasts.push({
-            title: item._attributes.title,
-            episodes: episodes
-          });
-        }
-        extractPodcasts(item.outline);
-      }
-    };
-
-    extractPodcasts(outlines);
+    const podcasts = parseOpmlToPodcasts(text);
     setData(podcasts);
     setSelectedPodcast(null);
   };
