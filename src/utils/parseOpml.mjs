@@ -46,5 +46,7 @@ export function parseOpmlToPodcasts(opmlText) {
   };
 
   extractPodcasts(parsed?.opml?.body?.outline);
-  return podcasts;
+  return podcasts.sort((a, b) =>
+    (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" })
+  );
 }

@@ -15,6 +15,16 @@
   button {
     @apply outline-none;
   }
+
+  @screen lg {
+    body {
+      @apply h-screen overflow-hidden;
+    }
+
+    #root {
+      @apply h-full;
+    }
+  }
 }
 
 @layer components {

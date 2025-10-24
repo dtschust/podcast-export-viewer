@@ -4,6 +4,9 @@ import { FileIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { parseOpmlToPodcasts } from "./utils/parseOpml.mjs";
 import defaultData from "../default.json";
 
+const comparePodcastTitles = (a, b) =>
+  (a.title || "").localeCompare(b.title || "", undefined, { sensitivity: "base" });
+
 export default function PodcastViewerApp() {
   const [data, setData] = useState([]);
   const [selectedPodcastIndex, setSelectedPodcastIndex] = useState(null);
@@ -21,7 +24,7 @@ export default function PodcastViewerApp() {
   };
 
   const handleLoadDefault = () => {
-    const clonedDefault = JSON.parse(JSON.stringify(defaultData));
+    const clonedDefault = JSON.parse(JSON.stringify(defaultData)).sort(comparePodcastTitles);
     setData(clonedDefault);
     setSelectedPodcastIndex(null);
   };
@@ -73,9 +76,9 @@ export default function PodcastViewerApp() {
   }, [filteredData, selectedPodcastIndex]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100">
-      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-10">
-        <header className="flex flex-col gap-2">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 lg:h-screen">
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-10 lg:h-screen lg:overflow-hidden lg:px-8 lg:py-8">
+        <header className="flex flex-col gap-2 lg:flex-none">
           <Heading size="7" weight="bold">
             Podcast Viewer
           </Heading>
@@ -84,8 +87,8 @@ export default function PodcastViewerApp() {
           </Text>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <section className="glass-panel flex h-full flex-col gap-4 p-6">
+        <div className="grid gap-6 lg:flex-1 lg:min-h-0 lg:grid-cols-[320px_minmax(0,1fr)] lg:overflow-hidden">
+          <section className="glass-panel flex h-full flex-col gap-4 p-6 lg:h-full lg:min-h-0 lg:overflow-hidden">
             <div className="space-y-2">
               <Heading size="4">Library</Heading>
               <Text size="2" color="gray">
@@ -135,8 +138,8 @@ export default function PodcastViewerApp() {
                 </Text>
               </div>
             ) : (
-              <div className="hidden lg:block">
-                <ScrollArea type="hover" className="max-h-[520px] pr-2">
+              <div className="hidden lg:flex lg:flex-1 lg:min-h-0">
+                <ScrollArea type="hover" className="flex-1 pr-2 lg:h-full">
                   <Flex direction="column" gap="2">
                     {filteredData.map((podcast) => {
                       const isActive = podcast.originalIndex === selectedPodcastIndex;
@@ -174,8 +177,8 @@ export default function PodcastViewerApp() {
             )}
           </section>
 
-          <section className="glass-panel flex h-full flex-col gap-6 p-6">
-            <div className="flex flex-col gap-4">
+          <section className="glass-panel flex h-full flex-col gap-6 p-6 lg:h-full lg:min-h-0 lg:overflow-hidden">
+            <div className="flex flex-col gap-4 lg:flex-none">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <Heading size="4">
@@ -231,50 +234,59 @@ export default function PodcastViewerApp() {
               <Separator size="4" />
             </div>
 
-            {selectedPodcast ? (
-              selectedPodcast.episodes.length > 0 ? (
-                <ScrollArea type="hover" className="max-h-[640px] pr-2">
-                  <Flex direction="column" gap="4">
-                    {selectedPodcast.episodes.map((ep, idx) => (
-                      <Card
-                        key={`${ep.title}-${idx}`}
-                        className="border border-slate-200 shadow-sm"
-                        variant="surface"
-                      >
-                        <Flex direction="column" gap="3">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <Heading size="3">{ep.title || "Untitled Episode"}</Heading>
-                            <Badge color="gray" variant="soft">
-                              {ep.playedStatus}
-                            </Badge>
-                          </div>
-                          <Text size="2" color="gray">
-                            Released {formatDate(ep.releaseDate)}
-                          </Text>
-                          {ep.playedStatus === "in progress" && ep.progress.length ? (
+            <div className="flex-1 min-h-0">
+              {selectedPodcast ? (
+                selectedPodcast.episodes.length > 0 ? (
+                  <ScrollArea type="hover" className="flex-1 pr-2 lg:h-full">
+                    <Flex direction="column" gap="4">
+                      {selectedPodcast.episodes.map((ep, idx) => {
+                        const showProgress =
+                          ep.playedStatus === "in progress" &&
+                          ep.progress !== undefined &&
+                          ep.progress !== null &&
+                          ep.progress !== "";
+                        return (
+                        <Card
+                          key={`${ep.title}-${idx}`}
+                          className="border border-slate-200 shadow-sm"
+                          variant="surface"
+                        >
+                          <Flex direction="column" gap="3">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <Heading size="3">{ep.title || "Untitled Episode"}</Heading>
+                              <Badge color="gray" variant="soft">
+                                {ep.playedStatus}
+                              </Badge>
+                            </div>
                             <Text size="2" color="gray">
-                              Progress • {toHHMMSS(ep.progress)}
+                              Released {formatDate(ep.releaseDate)}
                             </Text>
-                          ) : null}
-                        </Flex>
-                      </Card>
-                    ))}
-                  </Flex>
-                </ScrollArea>
+                            {showProgress ? (
+                              <Text size="2" color="gray">
+                                Progress • {toHHMMSS(ep.progress)}
+                              </Text>
+                            ) : null}
+                          </Flex>
+                        </Card>
+                        );
+                      })}
+                    </Flex>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 p-6 text-center">
+                    <Text size="2" color="gray">
+                      This podcast has no episodes with the current filters.
+                    </Text>
+                  </div>
+                )
               ) : (
-                <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center">
-                  <Text size="2" color="gray">
-                    This podcast has no episodes with the current filters.
+                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white/60 p-10 text-center">
+                  <Text size="3" color="gray">
+                    Choose a podcast from the left to explore its episodes.
                   </Text>
                 </div>
-              )
-            ) : (
-              <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white/60 p-10 text-center">
-                <Text size="3" color="gray">
-                  Choose a podcast from the left to explore its episodes.
-                </Text>
-              </div>
-            )}
+              )}
+            </div>
           </section>
         </div>
       </main>
