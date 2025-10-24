@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card, Flex, Heading, ScrollArea, Separator, Text } from "@radix-ui/themes";
 import { FileIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { parseOpmlToPodcasts } from "./utils/parseOpml.mjs";
@@ -30,6 +30,21 @@ export default function PodcastViewerApp() {
     setFilters({ ...filters, [key]: !filters[key] });
   };
 
+  const handlePodcastSelect = (value) => {
+    if (value === "") {
+      setSelectedPodcastIndex(null);
+      return;
+    }
+
+    const parsed = Number(value);
+    if (Number.isNaN(parsed)) {
+      setSelectedPodcastIndex(null);
+      return;
+    }
+
+    setSelectedPodcastIndex(parsed);
+  };
+
   const filteredData = useMemo(() => {
     return data
       .map((podcast, index) => {
@@ -48,6 +63,14 @@ export default function PodcastViewerApp() {
     selectedPodcastIndex === null
       ? null
       : filteredData.find((podcast) => podcast.originalIndex === selectedPodcastIndex) ?? null;
+
+  useEffect(() => {
+    if (selectedPodcastIndex === null) return;
+    const stillExists = filteredData.some((podcast) => podcast.originalIndex === selectedPodcastIndex);
+    if (!stillExists) {
+      setSelectedPodcastIndex(null);
+    }
+  }, [filteredData, selectedPodcastIndex]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100">
@@ -112,40 +135,42 @@ export default function PodcastViewerApp() {
                 </Text>
               </div>
             ) : (
-              <ScrollArea type="hover" className="max-h-[520px] pr-2">
-                <Flex direction="column" gap="2">
-                  {filteredData.map((podcast) => {
-                    const isActive = podcast.originalIndex === selectedPodcastIndex;
-                    return (
-                      <button
-                        key={`${podcast.title}-${podcast.originalIndex}`}
-                        type="button"
-                        onClick={() => setSelectedPodcastIndex(podcast.originalIndex)}
-                        className={[
-                          "w-full rounded-lg border px-4 py-3 text-left transition-all",
-                          isActive
-                            ? "border-indigo-600 bg-indigo-50 shadow-sm"
-                            : "border-slate-200 bg-white hover:border-indigo-400 hover:bg-indigo-50",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <Text size="3" weight="medium">
-                            {podcast.title}
-                          </Text>
-                          <Badge color={isActive ? "iris" : "gray"} variant={isActive ? "soft" : "surface"}>
-                            {podcast.episodes.length}
-                          </Badge>
-                        </div>
-                        {podcast.description ? (
-                          <Text as="p" size="2" color="gray">
-                            {podcast.description}
-                          </Text>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </Flex>
-              </ScrollArea>
+              <div className="hidden lg:block">
+                <ScrollArea type="hover" className="max-h-[520px] pr-2">
+                  <Flex direction="column" gap="2">
+                    {filteredData.map((podcast) => {
+                      const isActive = podcast.originalIndex === selectedPodcastIndex;
+                      return (
+                        <button
+                          key={`${podcast.title}-${podcast.originalIndex}`}
+                          type="button"
+                          onClick={() => setSelectedPodcastIndex(podcast.originalIndex)}
+                          className={[
+                            "w-full rounded-lg border px-4 py-3 text-left transition-all",
+                            isActive
+                              ? "border-indigo-600 bg-indigo-50 shadow-sm"
+                              : "border-slate-200 bg-white hover:border-indigo-400 hover:bg-indigo-50",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <Text size="3" weight="medium">
+                              {podcast.title}
+                            </Text>
+                            <Badge color={isActive ? "iris" : "gray"} variant={isActive ? "soft" : "surface"}>
+                              {podcast.episodes.length}
+                            </Badge>
+                          </div>
+                          {podcast.description ? (
+                            <Text as="p" size="2" color="gray">
+                              {podcast.description}
+                            </Text>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </Flex>
+                </ScrollArea>
+              </div>
             )}
           </section>
 
@@ -165,6 +190,27 @@ export default function PodcastViewerApp() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                {filteredData.length > 0 ? (
+                  <div className="w-full lg:hidden">
+                    <label className="block text-sm font-medium text-slate-600" htmlFor="podcast-select">
+                      Podcast
+                    </label>
+                    <select
+                      id="podcast-select"
+                      value={selectedPodcastIndex ?? ""}
+                      onChange={(event) => handlePodcastSelect(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                    >
+                      <option value="">Choose a podcast…</option>
+                      {filteredData.map((podcast) => (
+                        <option key={`${podcast.title}-${podcast.originalIndex}`} value={podcast.originalIndex}>
+                          {podcast.title} ({podcast.episodes.length})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+
                 <FilterToggle
                   label="Unplayed"
                   checked={filters.unplayed}
