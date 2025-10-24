@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "./components/ui/card";
 import { parseOpmlToPodcasts } from "./utils/parseOpml.mjs";
+import defaultData from "../default.json";
 
 export default function PodcastViewerApp() {
   const [data, setData] = useState([]);
@@ -14,6 +15,12 @@ export default function PodcastViewerApp() {
     const text = await file.text();
     const podcasts = parseOpmlToPodcasts(text);
     setData(podcasts);
+    setSelectedPodcast(null);
+  };
+
+  const handleLoadDefault = () => {
+    const clonedDefault = JSON.parse(JSON.stringify(defaultData));
+    setData(clonedDefault);
     setSelectedPodcast(null);
   };
 
@@ -37,12 +44,20 @@ export default function PodcastViewerApp() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
       <div>
         <h2 className="text-xl font-bold mb-2">Podcasts</h2>
-        <input
-          type="file"
-          accept=".opml,.xml"
-          onChange={handleFileUpload}
-          className="mb-4"
-        />
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <input
+            type="file"
+            accept=".opml,.xml"
+            onChange={handleFileUpload}
+          />
+          <button
+            type="button"
+            onClick={handleLoadDefault}
+            className="rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Load Default
+          </button>
+        </div>
 
         <div className="mb-4 space-y-1">
           <label className="block font-medium">Filters:</label>
